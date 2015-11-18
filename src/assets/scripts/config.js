@@ -32,19 +32,24 @@
  *     }
  */
 require.config({
-    paths: {
-        requirejs: '../vendor/requirejs/require'
-    },
-    shim: {
+  paths: {
+    requirejs: '../vendor/requirejs/require',
+    jquery: '../vendor/jquery/dist/jquery'
+  },
+  shim: {
+    jquery: {
+      exports: '$'
+    }
+  },
+  waitSeconds: 120,
+  packages: [
 
-    },
-    waitSeconds: 120,
-    packages: [
-
-    ]
+  ]
 });
 
 /**
  * Module definitions for pre-loaded scripts.
  */
-define('modernizr', function() { return window.Modernizr; }); // jshint ignore:line
+define('modernizr', function() {
+  return window.Modernizr;
+}); // jshint ignore:line
