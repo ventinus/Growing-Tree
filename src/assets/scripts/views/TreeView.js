@@ -171,7 +171,6 @@ export default class TreeView {
   }
 
   drawScape() {
-
     // Sky
     this.ctx.fillStyle = 'rgba(0,206,250,1)'; // animate the opacity of this color for transition between day and night
     this.ctx.fillRect(0, 0, this.element.width, this.element.height - this.landHeight);
@@ -208,9 +207,9 @@ export default class TreeView {
     // relative heights are the difference between a given hill
     // and its previous
     var small, med, large;
-    small = 0.15;
+    small = 0.05;
     med = 0.25;
-    large = 0.7;
+    large = 0.8;
 
     var hillHeights = [
       {
