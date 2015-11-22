@@ -21,23 +21,18 @@ export default class TreeView {
 
     this.baseWidth = 20;
 
-    this.branches = [{
-      xPos: (this.element.width - this.baseWidth) / 2,
-      yPos: this.element.height - 20,
-      startTime: null
-    }];
+    this.branches = [];
 
     this.branchCount = 1;
 
     this.currentStrokeWidth = this.baseWidth;
 
-
     // Lower rateOfGrowth allows for a higher branchLength
     // lower rateOfGrowth means the branchSpread should
     // be lower as well to keep it from getting too wide
-    this.branchLength = 250;
-    this.rateOfGrowth = 1;
-    this.branchSpread = 1;
+    this.branchLength = 0;
+    this.rateOfGrowth = 0;
+    this.branchSpread = 0;
 
     this.animationRequests = [];
 
@@ -60,7 +55,9 @@ export default class TreeView {
    */
   init() {
 
-    this.enable();
+    this.setAttrs()
+      .drawScape()
+      .enable();
 
     return this;
   }
@@ -127,93 +124,191 @@ export default class TreeView {
   }
 
   drawTree() {
+    this.ctx.strokeStyle = '#825201';
+    this.ctx.beginPath();
+    // this.animTreeGrowth(0);
 
-    // this.drawSegment();
     var request = window.requestAnimationFrame(this.taperedTrunk.bind(this, 0));
     this.animationRequests.push(request);
 
     return this;
   }
 
-  drawTrunk(val) {
-    for (var i = 0; i < this.baseWidth; i++) {
-      if (val) {
-        this.drawLine(i, 0);
-      } else {
-        this.makeBranch(i, 0);
+  setAttrs() {
+    // this.element.height = window.innerHeight * 0.9;
+    // this.element.width = window.innerWidth * 0.9;
+    
+    this.element.height = 500;
+    this.element.width = window.innerWidth - 100;
+
+    this.landHeight = 100;
+
+    var branch = {
+      xPos: (this.element.width - this.baseWidth) / 2,
+      yPos: this.element.height - (this.landHeight / 2),
+      startTime: null,
+      // branchLength: Math.random() * (0.8 - 0.3) + 0.3
+    }
+
+    this.branches.push(branch);
+
+    // In general, a higher rateOfGrowth means branchLength would
+    // need to be shorter and thus branchSpread can be larger
+
+    // How long a branch is with respect to the amount of time
+    // it takes to grow it
+    this.branchLength = 250;
+
+    // upwards velocity. branches will be longer because same amount of
+    // time is spent growing a branch
+    this.rateOfGrowth = 1;
+
+    //higher the number, the wider the branches shoot out
+    this.branchSpread = 1;
+
+
+    return this;
+  }
+
+  drawScape() {
+
+    // Sky
+    this.ctx.fillStyle = 'rgba(0,206,250,1)'; // animate the opacity of this color for transition between day and night
+    this.ctx.fillRect(0, 0, this.element.width, this.element.height - this.landHeight);
+
+    // Land
+    this.ctx.fillStyle = '#FF941c';
+    this.ctx.fillRect(0, this.element.height - this.landHeight, this.element.width, this.element.height);
+
+    // Sun
+    this.ctx.fillStyle = '#FF0';
+    this.ctx.strokewidth = 0;
+    this.ctx.beginPath();
+    this.ctx.arc(this.element.width - 75, 75, 50, 0, Math.PI*2, false);
+    this.ctx.fill();
+    
+    // Clouds
+    this.drawCloud(25, 50);
+    this.drawCloud(this.element.width / 2, 80);
+    this.drawCloud(this.element.width - 70, 50);
+
+    // Hills
+    this.drawHills();
+
+    return this;
+  }
+
+  drawHills() {
+    var hillWidth = 70;
+    var hillWidthHalf = hillWidth / 2;
+    var xPos = 20;
+    var skyHeight = this.element.height - this.landHeight;
+    var yPos = skyHeight;
+
+    // relative heights are the difference between a given hill
+    // and its previous
+    var small, med, large;
+    small = 0.15;
+    med = 0.25;
+    large = 0.7;
+
+    var hillHeights = [
+      {
+        full: skyHeight * med,
+        relative: -skyHeight * med
+      },{
+        full: (skyHeight * med) + hillWidthHalf,
+        relative: 0
+      },{
+        full: skyHeight * large,
+        relative: -((skyHeight * large) - ((skyHeight * med) + hillWidth))
+      },{
+        full: (skyHeight * large) - hillWidthHalf,
+        relative: ((skyHeight * large) - hillWidthHalf) - ((skyHeight * small) + hillWidthHalf)
+      },{
+        full: skyHeight * small,
+        relative: skyHeight * small
       }
+    ];
+
+    var midway = Math.floor(hillHeights.length / 2);
+
+    this.ctx.fillStyle = '#069611';
+    this.ctx.strokewidth = 2;
+    this.ctx.strokeStyle = '#000';
+    this.ctx.beginPath();
+
+    for (var i = 0, j = hillHeights.length; i < j; i++) {
+      this.ctx.moveTo(xPos, yPos);
+      if (i <= midway) {
+        // First half
+        yPos += hillHeights[i].relative;
+        this.ctx.lineTo(xPos, yPos);
+        this.ctx.arc(xPos + hillWidthHalf, yPos, hillWidthHalf, Math.PI, 0, false);
+        this.ctx.fillRect(xPos, yPos, hillWidth, hillHeights[i].full);
+      } else {
+        // second half
+        this.ctx.arc(xPos + hillWidthHalf, yPos, hillWidthHalf, Math.PI, 0, false);
+        this.ctx.fillRect(xPos, yPos, hillWidth, hillHeights[i].full);
+      }
+
+      this.ctx.moveTo(xPos + hillWidthHalf - 5, yPos - (hillWidthHalf / 2) - 4);
+      this.ctx.lineTo(xPos + hillWidthHalf - 5, yPos - (hillWidthHalf / 2) + 4);
+      this.ctx.moveTo(xPos + hillWidthHalf + 5, yPos - (hillWidthHalf / 2) - 4);
+      this.ctx.lineTo(xPos + hillWidthHalf + 5, yPos - (hillWidthHalf / 2) + 4);
+
+      xPos += hillWidthHalf;
+      
+      if (i < midway) {
+        yPos -= hillWidthHalf;
+      } else if (i === midway) {
+        yPos += hillWidthHalf;
+      } else {
+        xPos += hillWidthHalf;
+        this.ctx.moveTo(xPos, yPos);
+        yPos += hillHeights[i].relative;
+        this.ctx.lineTo(xPos, yPos);
+        xPos -= hillWidthHalf;
+        yPos += hillWidthHalf;
+      }
+      
     }
 
-    return this;
-  }
-
-  drawLine(index, delta) {
-    this.ctx.moveTo(this.lines[index].xPos, this.lines[index].yPos);
-    this.lines[index].yPos -= this.lines[index].speed;
-    this.ctx.lineTo(this.lines[index].xPos, this.lines[index].yPos);
+    this.ctx.fill();
     this.ctx.stroke();
 
     return this;
   }
 
-  makeBranch(index, delta) {
-    this.ctx.moveTo(this.lines[index].xPos, this.lines[index].yPos);
-    this.lines[index].yPos -= this.lines[index].speed;
-    if (index <= this.lines.length / 2) {
-      this.lines[index].xPos -= this.lines[index].speed;
-    } else {
-      this.lines[index].xPos += this.lines[index].speed;
-    }
-    this.ctx.lineTo(this.lines[index].xPos, this.lines[index].yPos);
-    this.ctx.stroke();
-
-    return this;
-  }
-
-  drawSegment() {
-    this.ctx.lineWidth = this.currentStrokeWidth;
-    this.ctx.moveTo(this.branches[0].xPos, this.branches[0].yPos);
-    this.branches[0].yPos -= 100
-    this.ctx.lineTo(this.branches[0].xPos, this.branches[0].yPos);
-    this.ctx.stroke();
+  drawCloud(xPos, yPos) {
+    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.9';
+    this.ctx.strokewidth = 0;
+    this.ctx.beginPath();
 
     for (var i = 0; i < 5; i++) {
-      this.splitBranch();
-      this.drawMoreBranches();
+      var altY = i % 2 === 0 ? yPos : yPos - 15;
+      this.ctx.arc(xPos, altY, 20, 0, Math.PI*2, false);
+      xPos += 15;
     }
+    
+    this.ctx.fill();
 
     return this;
   }
 
-  drawMoreBranches() {
-    this.ctx.lineWidth = this.currentStrokeWidth;
-    for (var i = 0; i < this.branchCount; i++) {
-      this.ctx.moveTo(this.branches[i].xPos, this.branches[i].yPos);
-      this.branches[i].yPos -= (Math.floor(Math.random() * (55 - 15 + 1)) + 15);
-      if (i < this.branchCount / 2) {
-        this.branches[i].xPos -= (Math.floor(Math.random() * (50 - 15 + 1)) + 15);
-        this.ctx.lineTo(this.branches[i].xPos, this.branches[i].yPos);
-      } else {
-        this.branches[i].xPos += (Math.floor(Math.random() * (50 - 15 + 1)) + 15);
-        this.ctx.lineTo(this.branches[i].xPos, this.branches[i].yPos);
-      }
 
-      this.ctx.stroke();
-    }
-
-    return this;
-  }
 
   splitBranch() {
     this.cancelAllAnimationRequests();
 
-    for (var i = 0; i < this.branchCount; i++) {
+    for (var i = this.branchCount - 1; i >= 0; i--) {
       this.branches[i].startTime = null;
 
       var newBranch = {
         xPos: this.branches[i].xPos,
         yPos: this.branches[i].yPos,
-        startTime: null
+        startTime: null,
+        // branchLength: Math.random() * (0.8 - 0.3) + 0.3
       };
       this.branches.push(newBranch);
     }
@@ -222,7 +317,8 @@ export default class TreeView {
     this.currentStrokeWidth *= (2 / 3);
     this.branchLength *= (2 / 3);
 
-    for (var i = 0; i < this.branchCount; i++) {
+    for (var i = this.branchCount - 1; i >= 0; i--) {
+      // this.animTreeGrowth(i);
       var request = window.requestAnimationFrame(this.taperedTrunk.bind(this, i));
       this.animationRequests.push(request);
     }
@@ -233,10 +329,18 @@ export default class TreeView {
   taperedTrunk(branchIndex, timestamp) {
     if (!this.branches[branchIndex].startTime) this.branches[branchIndex].startTime = timestamp;
     var elapsedTime = timestamp - this.branches[branchIndex].startTime;
-
+    // console.log(this.branches)
     var endTime = this.baseWidth * this.branchLength;
 
-    this.ctx.lineWidth = this.currentStrokeWidth - elapsedTime / this.branchLength;
+    // console.log('strokewidth', this.currentStrokeWidth);
+    // console.log('elapsed time', elapsedTime);
+    // console.log('branchLength', this.branchLength);
+    var subtractedAmount = (elapsedTime / endTime) * 8;
+    // console.log('subtracted amount', subtractedAmount);
+    // console.log('endTime', endTime);
+
+    this.ctx.lineWidth = this.currentStrokeWidth - subtractedAmount;
+    // console.log('drawn lineWidth', this.ctx.lineWidth);
     this.ctx.moveTo(this.branches[branchIndex].xPos, this.branches[branchIndex].yPos)
 
     this.branches[branchIndex].yPos -= (Math.random() * this.rateOfGrowth);
@@ -253,12 +357,15 @@ export default class TreeView {
 
     this.ctx.lineTo(this.branches[branchIndex].xPos, this.branches[branchIndex].yPos);
 
+    // console.log(elapsedTime);
+    // console.log(endTime);
     this.ctx.stroke();
     if (this.currentStrokeWidth < 0.2 || this.branchCount >= 64) {
       this.cancelAllAnimationRequests();
     } else if (elapsedTime >= endTime * (5 / 8)) {
       this.splitBranch();
     } else if (elapsedTime < endTime * (5 / 8)) {
+      // this.animTreeGrowth(branchIndex);
       var request = window.requestAnimationFrame(this.taperedTrunk.bind(this, branchIndex));
       this.animationRequests.push(request);
     }
@@ -266,8 +373,17 @@ export default class TreeView {
     return this;
   }
 
+  animTreeGrowth(index) {
+    var request = window.requestAnimationFrame(this.animTreeGrowth.bind(this));
+    this.animationRequests.push(request);
+    var timestamp = new Date().getTime();
+    this.taperedTrunk(index, timestamp);
+
+    return this;
+  }
+
   cancelAllAnimationRequests() {
-    for (var i = 0; i < this.animationRequests.length; i++) {
+    for (var i = this.animationRequests.length - 1; i >= 0; i--) {
       window.cancelAnimationFrame(this.animationRequests[i]);
     }
     this.animationRequests = [];
