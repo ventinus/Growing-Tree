@@ -1,4 +1,4 @@
-import TreeView from './views/TreeView';
+import Scene from './views/Scene';
 
 export default class App {
   constructor() {
@@ -7,18 +7,15 @@ export default class App {
   }
 
   createChildren() {
-    this.tree = document.getElementById('tree');
+    this.canvas = document.getElementById('canvas');
 
     return this;
   }
 
   init() {
-    this.initTreeView();
+    this.SceneInstance = new Scene(this.canvas);
 
     return this;
   }
 
-  initTreeView() {
-    this.TreeInstance = new TreeView(this.tree);
-  }
 }
