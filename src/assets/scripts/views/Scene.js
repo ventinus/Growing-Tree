@@ -45,6 +45,7 @@ export default class Scene {
       .initSun()
       .initClouds()
       .initHills()
+      .drawLoop()
       // .initTree()
       .enable();
 
@@ -68,7 +69,7 @@ export default class Scene {
 
     this.isEnabled = true;
 
-    this.drawLoop();
+    
 
     return this;
   }
@@ -307,7 +308,7 @@ export default class Scene {
     if (this.sun.rising && this.sun.yPos < -this.sun.radius - 5) {
       this.sun.rising = false;
       this.sun.xPos = this.element.width - 75;
-    } else if (!this.sun.rising && this.sun.yPos > this.skyHeight + this.sun.radius + 5) {
+    } else if (!this.sun.rising && this.sun.yPos > this.skyHeight + this.sun.radius * 2) {
       this.sun.rising = true;
       this.sun.xPos = 75;
     }
@@ -394,13 +395,10 @@ export default class Scene {
         // First half
         yPos += this.hill.hillHeights[i].relative;
         this.ctx.lineTo(xPos, yPos);
-        this.ctx.arc(xPos + this.hill.hillWidthHalf, yPos, this.hill.hillWidthHalf, Math.PI, 0, false);
-        this.ctx.fillRect(xPos, yPos, this.hill.hillWidth, this.hill.hillHeights[i].full);
-      } else {
-        // second half
-        this.ctx.arc(xPos + this.hill.hillWidthHalf, yPos, this.hill.hillWidthHalf, Math.PI, 0, false);
-        this.ctx.fillRect(xPos, yPos, this.hill.hillWidth, this.hill.hillHeights[i].full);
       }
+
+      this.ctx.arc(xPos + this.hill.hillWidthHalf, yPos, this.hill.hillWidthHalf, Math.PI, 0, false);
+      this.ctx.fillRect(xPos, yPos - 1, this.hill.hillWidth, this.hill.hillHeights[i].full);
 
       this.ctx.moveTo(xPos + this.hill.hillWidthHalf - 5, yPos - (this.hill.hillWidthHalf / 2) - 4);
       this.ctx.lineTo(xPos + this.hill.hillWidthHalf - 5, yPos - (this.hill.hillWidthHalf / 2) + 4);
@@ -520,7 +518,6 @@ export default class Scene {
     var elapsedTime = timestamp - this.branches[branchIndex].startTime;
     // console.log(this.branches)
     var endTime = this.baseWidth * this.branchLength;
-
     // console.log('strokewidth', this.currentStrokeWidth);
     // console.log('elapsed time', elapsedTime);
     // console.log('branchLength', this.branchLength);
