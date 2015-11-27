@@ -45,8 +45,8 @@ export default class Scene {
       .initSun()
       .initClouds()
       .initHills()
-      .drawLoop()
       // .initTree()
+      .drawLoop()
       .enable();
 
     return this;
@@ -69,7 +69,7 @@ export default class Scene {
 
     this.isEnabled = true;
 
-    
+
 
     return this;
   }
@@ -120,9 +120,12 @@ export default class Scene {
       .animSun()
       .drawLand()
       .animClouds()
+      // .drawTree();
       .drawHills();
 
-    window.requestAnimationFrame(this.drawLoop.bind(this));
+    setTimeout(function() {
+      window.requestAnimationFrame(this.drawLoop.bind(this));
+    }.bind(this), 1000 / this.fps)
 
     return this;
   }
@@ -133,14 +136,19 @@ export default class Scene {
   *********************/
   setScene() {
     this.element.height = 500;
-    
-    this.element.width = window.innerWidth - 100;
+
+    var windowWidth = window.innerWidth;
+
+    // 16 is the body left and right margin 
+    this.element.width = windowWidth <= 768 ? windowWidth - 16 : windowWidth - 100;
 
     this.landHeight = 100;
 
     this.skyHeight = this.element.height - this.landHeight;
 
     this.skyColor = 'rgba(0,206,250,0.8)'; // animate the opacity of this color for transition between day and night
+
+    this.fps = 60;
 
     this.drawScene();
 
@@ -167,34 +175,32 @@ export default class Scene {
 
     return this;
   }
-  
+
 
   /*********************
   Clouds
   *********************/
   initClouds() {
     // clouds seed
-    this.clouds = [
-      {
-        xPos: 25, 
-        yPos: 50,
-        velocity: .2,
-        behind: Math.floor(Math.random() * 2) == 1 ? true : false
-      },{
-        xPos: this.element.width / 2, 
-        yPos: 80,
-        velocity: .4,
-        behind: Math.floor(Math.random() * 2) == 1 ? true : false
-      },{
-        xPos: this.element.width - 70,
-        yPos: 50,
-        velocity: .6,
-        behind: Math.floor(Math.random() * 2) == 1 ? true : false
-      }
-    ];
+    this.clouds = [{
+      xPos: 25,
+      yPos: 50,
+      velocity: .2,
+      behind: Math.floor(Math.random() * 2) == 1 ? true : false
+    }, {
+      xPos: this.element.width / 2,
+      yPos: 80,
+      velocity: .4,
+      behind: Math.floor(Math.random() * 2) == 1 ? true : false
+    }, {
+      xPos: this.element.width - 70,
+      yPos: 50,
+      velocity: .6,
+      behind: Math.floor(Math.random() * 2) == 1 ? true : false
+    }];
 
     this.drawClouds(true);
-    
+
     return this;
   }
 
@@ -222,10 +228,10 @@ export default class Scene {
 
     for (var i = 0; i < 5; i++) {
       var altY = i % 2 === 0 ? cloud.yPos : cloud.yPos - 15;
-      this.ctx.arc(xPos, altY, 20, 0, Math.PI*2, false);
+      this.ctx.arc(xPos, altY, 20, 0, Math.PI * 2, false);
       xPos += 15;
     }
-    
+
     this.ctx.fill();
 
     return this;
@@ -278,10 +284,10 @@ export default class Scene {
     this.sun = {
       xPos: this.element.width - 75,
       yPos: 75,
-      velocity: 1,
+      percent: 0,
       radius: 50,
       rising: false
-    }
+    };
 
     this.drawSun();
 
@@ -292,18 +298,28 @@ export default class Scene {
     this.ctx.fillStyle = '#FF0';
     this.ctx.strokewidth = 0;
     this.ctx.beginPath();
-    this.ctx.arc(this.sun.xPos, this.sun.yPos, this.sun.radius, 0, Math.PI*2, false);
+    this.ctx.arc(this.sun.xPos, this.sun.yPos, this.sun.radius, 0, Math.PI * 2, false);
     this.ctx.fill();
 
     return this;
   }
 
   animSun() {
-    if (this.sun.rising) {
-      this.sun.yPos -= this.sun.velocity;
-    } else {
-      this.sun.yPos += this.sun.velocity;
-    }
+    this.sun.percent = this.sun.percent > 1 ? 0 : this.sun.percent + .001;
+
+    var xy = this.getQuadraticBezierXYatPercent({
+      x: 25,
+      y: this.skyHeight + (this.sun.radius * 2)
+    }, {
+      x: this.element.width / 2,
+      y: -this.skyHeight - 100
+    }, {
+      x: this.element.width - 25,
+      y: this.skyHeight + (this.sun.radius * 2)
+    })
+
+    this.sun.xPos = xy.x;
+    this.sun.yPos = xy.y;
 
     if (this.sun.rising && this.sun.yPos < -this.sun.radius - 5) {
       this.sun.rising = false;
@@ -320,8 +336,17 @@ export default class Scene {
     return this;
   }
 
+  getQuadraticBezierXYatPercent(startPt, controlPt, endPt) {
+    var x = Math.pow(1 - this.sun.percent, 2) * startPt.x + 2 * (1 - this.sun.percent) * this.sun.percent * controlPt.x + Math.pow(this.sun.percent, 2) * endPt.x;
+    var y = Math.pow(1 - this.sun.percent, 2) * startPt.y + 2 * (1 - this.sun.percent) * this.sun.percent * controlPt.y + Math.pow(this.sun.percent, 2) * endPt.y;
+    return ({
+      x: x,
+      y: y
+    });
+  }
+
   updateSkyColor() {
-    var skyOpacity = 1 - (this.sun.yPos / (this.skyHeight + (this.sun.radius * 2) ));
+    var skyOpacity = 1 - (this.sun.yPos / (this.skyHeight + (this.sun.radius * 2)));
 
     if (skyOpacity >= 1) {
       skyOpacity = 1;
@@ -342,7 +367,7 @@ export default class Scene {
   initHills() {
     // Hills properties set on initialization
     this.hill = {
-      hillWidth: Math.random() * (this.element.width / 11 - this.element.width / 10) + this.element.width / 10,
+      hillWidth: Math.random() * (70 - 50) + 50,
       hillWidthHalf: 0,
       xPos: Math.random() * (this.element.width / 2 - 20) + 20,
       small: Math.random() * (0.15 - 0.05) + 0.05,
@@ -354,24 +379,22 @@ export default class Scene {
 
     this.hill.hillWidthHalf = this.hill.hillWidth / 2;
 
-    this.hill.hillHeights = [
-      {
-        full: this.skyHeight * this.hill.med,
-        relative: -this.skyHeight * this.hill.med
-      },{
-        full: (this.skyHeight * this.hill.med) + this.hill.hillWidthHalf,
-        relative: 0
-      },{
-        full: this.skyHeight * this.hill.large,
-        relative: -((this.skyHeight * this.hill.large) - ((this.skyHeight * this.hill.med) + this.hill.hillWidth))
-      },{
-        full: (this.skyHeight * this.hill.large) - this.hill.hillWidthHalf,
-        relative: ((this.skyHeight * this.hill.large) - this.hill.hillWidthHalf) - ((this.skyHeight * this.hill.small) + this.hill.hillWidthHalf)
-      },{
-        full: this.skyHeight * this.hill.small,
-        relative: this.skyHeight * this.hill.small
-      }
-    ];
+    this.hill.hillHeights = [{
+      full: this.skyHeight * this.hill.med,
+      relative: -this.skyHeight * this.hill.med
+    }, {
+      full: (this.skyHeight * this.hill.med) + this.hill.hillWidthHalf,
+      relative: 0
+    }, {
+      full: this.skyHeight * this.hill.large,
+      relative: -((this.skyHeight * this.hill.large) - ((this.skyHeight * this.hill.med) + this.hill.hillWidth))
+    }, {
+      full: (this.skyHeight * this.hill.large) - this.hill.hillWidthHalf,
+      relative: ((this.skyHeight * this.hill.large) - this.hill.hillWidthHalf) - ((this.skyHeight * this.hill.small) + this.hill.hillWidthHalf)
+    }, {
+      full: this.skyHeight * this.hill.small,
+      relative: this.skyHeight * this.hill.small
+    }];
 
     this.hill.midway = Math.floor(this.hill.hillHeights.length / 2);
 
@@ -406,7 +429,7 @@ export default class Scene {
       this.ctx.lineTo(xPos + this.hill.hillWidthHalf + 5, yPos - (this.hill.hillWidthHalf / 2) + 4);
 
       xPos += this.hill.hillWidthHalf;
-      
+
       if (i < this.hill.midway) {
         yPos -= this.hill.hillWidthHalf;
       } else if (i === this.hill.midway) {
@@ -425,7 +448,7 @@ export default class Scene {
     this.ctx.stroke();
 
     this.drawClouds(false);
-    
+
     return this;
   }
 
@@ -468,8 +491,8 @@ export default class Scene {
 
     //higher the number, the wider the branches shoot out
     this.branchSpread = 1;
-    
-    this.drawTree();  
+
+    this.drawTree();
 
     return this;
   }
