@@ -308,14 +308,14 @@ export default class Scene {
     this.sun.percent = this.sun.percent > 1 ? 0 : this.sun.percent + .001;
 
     var xy = this.getQuadraticBezierXYatPercent({
-      x: 25,
-      y: this.skyHeight + (this.sun.radius * 2)
+      x: -100,
+      y: this.element.height * 1.5
     }, {
       x: this.element.width / 2,
-      y: -this.skyHeight - 100
+      y: -this.skyHeight * 2
     }, {
-      x: this.element.width - 25,
-      y: this.skyHeight + (this.sun.radius * 2)
+      x: this.element.width + 100,
+      y: this.element.height * 1.5
     })
 
     this.sun.xPos = xy.x;
