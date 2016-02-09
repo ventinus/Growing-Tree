@@ -45,8 +45,8 @@ export default class Scene {
       .initSun()
       .initClouds()
       .initHills()
-      // .initTree()
       .drawLoop()
+      // .initTree()
       .enable();
 
     return this;
@@ -68,8 +68,6 @@ export default class Scene {
     }
 
     this.isEnabled = true;
-
-
 
     return this;
   }
@@ -120,7 +118,6 @@ export default class Scene {
       .animSun()
       .drawLand()
       .animClouds()
-      // .drawTree();
       .drawHills();
 
     setTimeout(function() {
@@ -139,7 +136,7 @@ export default class Scene {
 
     var windowWidth = window.innerWidth;
 
-    // 16 is the body left and right margin 
+    // 16 is the body left and right margin
     this.element.width = windowWidth <= 768 ? windowWidth - 16 : windowWidth - 100;
 
     this.landHeight = 100;
@@ -469,14 +466,12 @@ export default class Scene {
     this.branchSpread = 0;
     this.animationRequests = [];
 
-    this.branches = [];
-    var branch = {
+    this.branches = [{
       xPos: (this.element.width - this.baseWidth) / 2,
       yPos: this.element.height - (this.landHeight / 2),
-      startTime: null,
+      startTime: null
       // branchLength: Math.random() * (0.8 - 0.3) + 0.3
-    }
-    this.branches.push(branch);
+    }];
 
     // In general, a higher rateOfGrowth means branchLength would
     // need to be shorter and thus branchSpread can be larger
@@ -498,10 +493,6 @@ export default class Scene {
   }
 
   drawTree() {
-    // this.ctx.strokeStyle = '#825201';
-    // this.ctx.beginPath();
-    // this.animTreeGrowth(0);
-
     var request = window.requestAnimationFrame(this.taperedTrunk.bind(this, 0));
     this.animationRequests.push(request);
 
@@ -517,7 +508,7 @@ export default class Scene {
       var newBranch = {
         xPos: this.branches[i].xPos,
         yPos: this.branches[i].yPos,
-        startTime: null,
+        startTime: null
         // branchLength: Math.random() * (0.8 - 0.3) + 0.3
       };
       this.branches.push(newBranch);
@@ -528,7 +519,6 @@ export default class Scene {
     this.branchLength *= (2 / 3);
 
     for (var i = this.branchCount - 1; i >= 0; i--) {
-      // this.animTreeGrowth(i);
       var request = window.requestAnimationFrame(this.taperedTrunk.bind(this, i));
       this.animationRequests.push(request);
     }
@@ -539,17 +529,11 @@ export default class Scene {
   taperedTrunk(branchIndex, timestamp) {
     if (!this.branches[branchIndex].startTime) this.branches[branchIndex].startTime = timestamp;
     var elapsedTime = timestamp - this.branches[branchIndex].startTime;
-    // console.log(this.branches)
     var endTime = this.baseWidth * this.branchLength;
-    // console.log('strokewidth', this.currentStrokeWidth);
-    // console.log('elapsed time', elapsedTime);
-    // console.log('branchLength', this.branchLength);
-    var subtractedAmount = (elapsedTime / endTime) * 8;
-    // console.log('subtracted amount', subtractedAmount);
-    // console.log('endTime', endTime);
+
+    var subtractedAmount = (elapsedTime / endTime) * 4;
 
     this.ctx.lineWidth = this.currentStrokeWidth - subtractedAmount;
-    // console.log('drawn lineWidth', this.ctx.lineWidth);
     this.ctx.strokeStyle = '#825201';
     this.ctx.beginPath();
     this.ctx.moveTo(this.branches[branchIndex].xPos, this.branches[branchIndex].yPos)
@@ -567,16 +551,13 @@ export default class Scene {
     }
 
     this.ctx.lineTo(this.branches[branchIndex].xPos, this.branches[branchIndex].yPos);
-
-    // console.log(elapsedTime);
-    // console.log(endTime);
     this.ctx.stroke();
+
     if (this.currentStrokeWidth < 0.2 || this.branchCount >= 64) {
       this.cancelAllAnimationRequests();
     } else if (elapsedTime >= endTime * (5 / 8)) {
       this.splitBranch();
     } else if (elapsedTime < endTime * (5 / 8)) {
-      // this.animTreeGrowth(branchIndex);
       var request = window.requestAnimationFrame(this.taperedTrunk.bind(this, branchIndex));
       this.animationRequests.push(request);
     }
